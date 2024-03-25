@@ -4,7 +4,7 @@
 // örn. yatırım önerisi
 // sistem parametereli dao nasıl çalışır karar verir
 // her katılımcının hesabında token var ve bu tokenlarla oy kullanıyorlar
-// dao = merrkezi olmayan banka, akıllı sözleşme işlemleri adil ve şeffaf şekilde yönetmeye yarıyor.
+// dao = merkezi olmayan banka, akıllı sözleşme işlemleri adil ve şeffaf şekilde yönetmeye yarıyor.
 
 import Trie "mo:base/Trie"; // veri yapısı anahtar ve değer çifti saklar
 import Principal "mo:base/Principal"; // hata durumu, genelde metin türlerde ayrıntıları içerir
