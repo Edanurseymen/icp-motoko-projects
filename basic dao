@@ -7,15 +7,15 @@
 // dao = merkezi olmayan banka, akıllı sözleşme işlemleri adil ve şeffaf şekilde yönetmeye yarıyor.
 
 import Trie "mo:base/Trie"; // veri yapısı anahtar ve değer çifti saklar
-import Principal "mo:base/Principal"; // hata durumu, genelde metin türlerde ayrıntıları içerir
+import Principal "mo:base/Principal";  // hata durumu, genelde metin türlerde ayrıntıları içerir
 import Option "mo:base/Option"; //işlemin sonucunu temsil eder, başarılı ise #ok, başarısız ise #err
 import Iter "mo:base/Iter";
-import Nat "mo:base/Nat"; // koleksiyonun elemanları üzerinde dolaşan döngü
-import Result "mo:base/Result"; // bir varlığı veya yokluğu temsil ediyor
+import Nat "mo:base/Nat";  // koleksiyonun elemanları üzerinde dolaşan döngü
+import Result "mo:base/Result";  // bir varlığı veya yokluğu temsil ediyor
 import Error "mo:base/Error"; // dfinity nin Internet Comp ağında kullanıcısı, idler benzersiz
 import ICRaw "mo:base/ExperimentalInternetComputer"; // bir canister çağırmak için, main nete girmiyoruz, test nete giriyoruz deneysel bir canister çağırıyoruz
 import List "mo:base/List"; // zaman, geçerli zamanı almak, zaman aralıklarını ölçmek
-import Time "mo:base/Time"; // elemanları üzerinde dolaşılabilen bir koleksiyon
+import Time "mo:base/Time";  // elemanları üzerinde dolaşılabilen bir koleksiyon
 import Types "./Types"; // ayrı motoko dosyası, kodun daha düzenli ve okunabilir olmasını sağlıyor
 
 shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
@@ -58,7 +58,7 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
       };
     };
 
-    /// Aramayı yapanın hesap bakiyesini döndür.
+     /// Aramayı yapanın hesap bakiyesini döndür.
     public query({caller}) func account_balance() : async Types.Tokens {
         Option.get(account_get(caller), Types.zeroToken)
     };
@@ -71,8 +71,9 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
     };
 
     /// Bir öneri sun
-    ///Bir teklif bir canister ID, yöntem adı ve yöntem argümanlarını içerir. 
-    ///Yeterli sayıda kullanıcı teklife "evet" oyu verirse, belirtilen yöntem belirtilen canister üzerinde belirtilen yöntem argümanları ile çağrılacaktır.
+    ///
+    ///Bir teklif bir canister ID, yöntem adı ve yöntem argümanlarını içerir.
+    ///Yeterli sayıda kullanıcı teklife "evet" oyu verirse, belirtilen yöntem belirtilen canister üzerinde belirtilen yöntem argümanları ile çağrılacaktır
     public shared({caller}) func submit_proposal(payload: Types.ProposalPayload) : async Types.Result<Nat, Text> {
         Result.chain(deduct_proposal_submission_deposit(caller), func (()) : Types.Result<Nat, Text> {
             let proposal_id = next_proposal_id;
@@ -93,17 +94,17 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
         })
     };
 
-    /// Verilen ID'ye sahip teklif varsa döndür.
+    /// Verilen ID'ye sahip teklif varsa döndür
     public query func get_proposal(proposal_id: Nat) : async ?Types.Proposal {
         proposal_get(proposal_id)
     };
 
-    /// Tüm tekliflerin listesini döndür.
+    /// Tüm tekliflerin listesini döndür
     public query func list_proposals() : async [Types.Proposal] {
         Iter.toArray(Iter.map(Trie.iter(proposals), func (kv : (Nat, Types.Proposal)) : Types.Proposal = kv.1))
     };
 
-    // Açık bir teklife oy ver.
+    // Açık bir teklife oy ver
     public shared({caller}) func vote(args: Types.VoteArgs) : async Types.Result<Types.ProposalState, Text> {
         switch (proposal_get(args.proposal_id)) {
         case null { #err("No proposal with ID " # debug_show(args.proposal_id) # " exists") };
@@ -128,7 +129,7 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
                           let voters = List.push(caller, proposal.voters);
 
                           if (votes_yes >= system_params.proposal_vote_threshold.amount_e8s) {
-                              // Teklif kabul edildiğinde teklif depozitosunu iade et.
+                              // Teklif kabul edildiğinde teklif depozitosunu iade et
                               ignore do ? {
                                   let account = account_get(proposal.proposer)!;
                                   let refunded = account.amount_e8s + system_params.proposal_submission_deposit.amount_e8s;
@@ -159,10 +160,10 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
         };
     };
 
-    /// Mevcut sistem parametrelerini al.
+     /// Mevcut sistem parametrelerini al.
     public query func get_system_params() : async Types.SystemParams { system_params };
 
-    /// Sistem parametrelerini güncelle.
+     /// Sistem parametrelerini güncelle
     ///
     /// Yalnızca teklif yürütme yoluyla çağrılabilir.
     public shared({caller}) func update_system_params(payload: Types.UpdateSystemParamsPayload) : async () {
@@ -176,7 +177,7 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
         };
     };
 
-    /// Teklif gönderim depozitosunu arayanın hesabından kes.
+    /// Teklif gönderim depozitosunu arayanın hesabından kes
     func deduct_proposal_submission_deposit(caller : Principal) : Types.Result<(), Text> {
         switch (account_get(caller)) {
         case null { #err "Caller needs an account to submit a proposal" };
@@ -193,10 +194,10 @@ shared actor class DAO(init : Types.BasicDaoStableStorage) = Self {
         };
     };
 
-    /// Execute all accepted proposals
+    /// Kabul edilen tüm teklifleri gerçekleştir
     func execute_accepted_proposals() : async () {
         let accepted_proposals = Trie.filter(proposals, func (_ : Nat, proposal : Types.Proposal) : Bool = proposal.state == #accepted);
-        // Teklif durumunu güncelle, böylece bir sonraki kalp atışında alınmayacak şekilde ayarla.
+        // Teklif durumunu güncelle, böylece bir sonraki kalp atışında alınmayacak şekilde ayarla
         for ((id, proposal) in Trie.iter(accepted_proposals)) {
             update_proposal_state(proposal, #executing);
         };
